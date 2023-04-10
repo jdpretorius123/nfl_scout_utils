@@ -4,11 +4,16 @@
 player_utils -- This module is gives NFL scouts the power to 
 perform basic operations with their scouting data, such as probing 
 player information and making one-to-one or one-to-many player 
-comparisons. This tool accepts tab-delimited text (.txt) files.
+comparisons. Additionally, this module provides funcionalities to 
+predict player's team position given certain data columns as input
+(based on random forest algirthm). This tool accepts tab-delimited 
+text (.txt) files.
 
 ## Usage
 This script requires `datetime` and `sqlite3` and contains the 
-following classes and functions.
+following classes and functions. Classification functionalities
+requires `sklearn` and `pandas`.
+
 
 ## Classes
 ```
@@ -23,6 +28,30 @@ parse_data(
     test_filename: str
 ) -> dict[str, Player]:
     Parse and return test history for players
+    
+rf.get_feature_label(
+    parsed_data: pd.DataFrame,
+    feature_cols: list[str],
+    label_col: str
+) -> tuple(pd.DataFrame, pd.DataFrame)
+# returns tuple of feature matrix and lable vector.
+
+rf.fit(
+    X: pd.DataFrame,
+    y: pd.DataFrame,
+    n_trees: int,
+    loss_fun: "MSE",
+    random_seed = None:
+) -> RandomForestClassifier
+# trainning the model
+
+rf.visualize(
+    y_pred: list[int],
+    y_true: list[int],
+    style = "confusion": str
+):
+# visualize classification performance.
+
 ```
 
 ## Example Usage
