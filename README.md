@@ -10,9 +10,8 @@ predict player's team position given certain data columns as input
 text (.txt) files.
 
 ## Usage
-This script requires `datetime` and `sqlite3` and contains the 
-following classes and functions. Classification functionalities
-requires `sklearn` and `pandas`.
+This script requires `datetime`, `sqlite3`, `sklearn`, and `pandas` 
+and contains the following classes and functions.
 
 
 ## Classes
