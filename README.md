@@ -28,12 +28,18 @@ parse_data(
 ) -> dict[str, Player]:
     Parse and return test history for players
     
+kmeans(
+    player: Player,
+    figure: bool
+) -> dict[str, Player]:
+    Conduct and return K-Means clustering analysis
+    
 rf.get_feature_label(
     parsed_data: pd.DataFrame,
     feature_cols: list[str],
     label_col: str
 ) -> tuple(pd.DataFrame, pd.DataFrame)
-    Returns tuple of feature matrix and lable vector.
+    Returns tuple of feature matrix and label vector
 
 rf.fit(
     X: pd.DataFrame,
@@ -42,14 +48,14 @@ rf.fit(
     loss_fun: "MSE",
     random_seed = None:
 ) -> RandomForestClassifier
-    Trains model.
+    Trains model
 
 rf.visualize(
     y_pred: list[int],
     y_true: list[int],
     style = "confusion": str
 ):
-    Visualizes classification performance.
+    Visualizes classification performance
 
 ```
 
