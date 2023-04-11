@@ -33,7 +33,7 @@ rf.get_feature_label(
     feature_cols: list[str],
     label_col: str
 ) -> tuple(pd.DataFrame, pd.DataFrame)
-# returns tuple of feature matrix and lable vector.
+    Returns tuple of feature matrix and lable vector.
 
 rf.fit(
     X: pd.DataFrame,
@@ -42,14 +42,14 @@ rf.fit(
     loss_fun: "MSE",
     random_seed = None:
 ) -> RandomForestClassifier
-# trainning the model
+    Trains model.
 
 rf.visualize(
     y_pred: list[int],
     y_true: list[int],
     style = "confusion": str
 ):
-# visualize classification performance.
+    Visualizes classification performance.
 
 ```
 
@@ -75,7 +75,7 @@ test_name = "Vertical"
 test_value = "41"
 
 player = records[player_id]
-kmeans_result = kmeans(test_name, test_value)
+kmeans_result = kmeans(player)
 ```
 
 ## Development
