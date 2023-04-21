@@ -14,6 +14,9 @@ Dependencies
 ------------
 datetime
 sqlite3
+matplotlib
+seaborn
+pandas
 
 Classes
 -------
@@ -27,9 +30,45 @@ parse_data(
     test_filename: str
 ) -> dict[str, Player]:
     Parse and return performance test history for players
+
+barplot(
+    var: str,
+    year: str,
+    records: dict[str, Player],
+    pos: str | None = None
+) -> pd.DataFrame:
+    Return bar plot of variable average (of position) by draft status.
+
+histogram(
+    var: str,
+    year: str,
+    records: dict[str, Player],
+    pos: str | None = None
+) -> pd.DataFrame:
+    Return histogram of `var` (of position) by draft status.
+
+boxplot(
+    var: str,
+    year: str,
+    records: dict[str, Player],
+    pos: str | None = None
+) -> pd.DataFrame:
+    Return boxplot of `var` (of position) by draft status.
+
+scatterplot(
+    var_one: str,
+    var_two: str,
+    year: str,
+    records: dict[str, Player],
+    pos: str | None = None
+) -> pd.DataFrame:
+    Return scatter plot of `var_one` by `var_two` (of position) by draft status.
 """
 
 from datetime import *  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
+import seaborn as sns  # type: ignore
+import pandas as pd  # type: ignore
 import sqlite3
 
 
@@ -738,3 +777,404 @@ def parse_data(player_filename: str, test_filename: str) -> dict[str, Player]:
     connection.close()
     records = player_dict
     return records
+
+
+def barplot(
+    var: str, year: str, records: dict[str, Player], pos: str | None = None
+) -> pd.DataFrame:
+    """
+    Return bar plot of `var` average (of position) by draft status.
+
+    Time Complexity
+    ---------------
+
+    Arguments
+    ---------
+    var -- a string denoting a physical trait or performance test
+        Acceptable Parameters:
+        1. Height
+        2. Weight
+        3. Forty
+        4. BenchReps
+        5. BroadJump
+        6. Vertical
+        7. Shuttle
+        8. Cone
+    year -- a string denoting the year
+    records -- a dictionary:
+        keys -- player IDs
+        values -- instances of Player class
+    pos -- an optional string denoting position group
+
+    Return
+    -------
+    pd.DataFrame
+        column names:
+            "Draft Status"
+                datatype: string/categorical
+            Name of variable passed to `var` argument
+                datatype: float64/numeric
+    """
+    traits: dict[str, str] = {"Height": "ht", "Weight": "wt"}
+    tests: list[str] = [
+        "Forty",
+        "Vertical",
+        "BenchReps",
+        "BroadJump",
+        "Cone",
+        "Shuttle",
+    ]
+    dataframe: pd.DataFrame = pd.DataFrame(columns=["Draft Status", var])
+    group = list(records.values())
+
+    if pos is not None:
+        players: list[Player] = [
+            player
+            for player in group
+            if player.year == year and player.pos == pos
+        ]
+    else:
+        players = [player for player in group if player.year == year]
+
+    for player in players:
+        if var not in tests:
+            value = getattr(player, traits[var])
+        else:
+            value = getattr(player, "get_score")(var)
+        if value != "DNP":
+            if player.was_drafted():
+                dataframe.loc[len(dataframe.index)] = [  # type: ignore
+                    "Drafted",
+                    float(value),
+                ]
+            else:
+                dataframe.loc[len(dataframe.index)] = [  # type: ignore
+                    "Undrafted",
+                    float(value),
+                ]
+
+    barplot = dataframe.groupby(["Draft Status"], as_index=False).mean()
+
+    plt.figure(figsize=(8, 4), tight_layout=True)  # type: ignore
+    colors = sns.color_palette("pastel")
+    plt.bar(barplot["Draft Status"], barplot[var], color=colors[:2])
+
+    if pos is not None:
+        title_str = f"Average {var} by Draft Status for {pos}"
+    else:
+        title_str = f"Average {var} by Draft Status"
+
+    plt.title(title_str)
+    plt.xlabel("Draft Status")
+    plt.ylabel = f"Average {var}"
+    plt.show()
+
+    return barplot
+
+
+def histogram(
+    var: str, year: str, records: dict[str, Player], pos: str | None = None
+) -> pd.DataFrame:
+    """
+    Return histogram of `var` (of position) by draft status.
+
+    Time Complexity
+    ---------------
+
+    Arguments
+    ---------
+    var -- a string denoting a physical trait or performance test
+        Acceptable Parameters:
+        1. Height
+        2. Weight
+        3. Forty
+        4. BenchReps
+        5. BroadJump
+        6. Vertical
+        7. Shuttle
+        8. Cone
+    year -- a string denoting the year
+    records -- a dictionary:
+        keys -- player IDs
+        values -- instances of Player class
+    pos -- an optional string denoting position group
+
+    Return
+    -------
+    pd.DataFrame
+        column names:
+            "Draft Status"
+                datatype: string/categorical
+            Name of variable passed to `var` argument
+                datatype: float64/numeric
+    """
+    traits: dict[str, str] = {"Height": "ht", "Weight": "wt"}
+    tests: list[str] = [
+        "Forty",
+        "Vertical",
+        "BenchReps",
+        "BroadJump",
+        "Cone",
+        "Shuttle",
+    ]
+    data_frame: pd.DataFrame = pd.DataFrame(columns=["Draft Status", var])
+    group = list(records.values())
+
+    if pos is not None:
+        players: list[Player] = [
+            player
+            for player in group
+            if player.year == year and player.pos == pos
+        ]
+    else:
+        players = [player for player in group if player.year == year]
+
+    for player in players:
+        if var not in tests:
+            value = getattr(player, traits[var])
+        else:
+            value = getattr(player, "get_score")(var)
+        if value != "DNP":
+            if player.was_drafted():
+                data_frame.loc[
+                    len(data_frame.index)
+                ] = ["Drafted", float(value)]  # type: ignore
+            else:
+                data_frame.loc[
+                    len(data_frame.index)
+                ] = ["Undrafted", float(value)]  # type: ignore
+
+    plt.figure(figsize=(10, 6), tight_layout=True)  # type: ignore
+    ax = sns.histplot(
+        data=data_frame,
+        x=var,
+        hue="Draft Status",
+        palette="Set2",
+        linewidth=2,
+    )
+
+    if pos is not None:
+        title_str = f"{var} by Draft Status for {pos}"
+    else:
+        title_str = f"{var} by Draft Status"
+
+    ax.set(
+        title=title_str,
+        xlabel=var,
+        ylabel="Frequency",
+    )
+    plt.show()
+
+    return data_frame
+
+
+
+def boxplot(
+    var: str, year: str, records: dict[str, Player], pos: str | None = None
+) -> pd.DataFrame:
+    """
+    Return boxplot of `var` (of position) by draft status.
+
+    Time Complexity
+    ---------------
+    
+    Arguments
+    ---------
+    var -- a string denoting a physical trait or performance test
+        Acceptable Parameters:
+        1. Height
+        2. Weight
+        3. Forty
+        4. BenchReps
+        5. BroadJump
+        6. Vertical
+        7. Shuttle
+        8. Cone
+    year -- a string denoting the year
+    records -- a dictionary:
+        keys -- player IDs
+        values -- instances of Player class
+    pos -- an optional string denoting position group
+
+    Return
+    -------
+    pd.DataFrame
+        column names:
+            "Draft Status"
+                datatype: string/categorical
+            Name of variable passed to `var` argument
+                datatype: float64/numeric
+    """
+    traits: dict[str, str] = {"Height": "ht", "Weight": "wt"}
+    tests: list[str] = [
+        "Forty",
+        "Vertical",
+        "BenchReps",
+        "BroadJump",
+        "Cone",
+        "Shuttle",
+    ]
+    data_frame: pd.DataFrame = pd.DataFrame(columns=["Draft Status", var])
+    group = list(records.values())
+
+    if pos is not None:
+        players: list[Player] = [
+            player
+            for player in group
+            if player.year == year and player.pos == pos
+        ]
+    else:
+        players = [player for player in group if player.year == year]
+
+    for player in players:
+        if var not in tests:
+            value = getattr(player, traits[var])
+        else:
+            value = getattr(player, "get_score")(var)
+        if value != "DNP":
+            if player.was_drafted():
+                data_frame.loc[
+                    len(data_frame.index)
+                ] = ["Drafted", float(value)]  # type: ignore
+            else:
+                data_frame.loc[
+                    len(data_frame.index)
+                ] = ["Undrafted", float(value)]  # type: ignore
+
+    plt.figure(figsize=(10, 6), tight_layout=True)  # type: ignore
+    ax = sns.boxplot(
+        data=data_frame,
+        x="Draft Status",
+        y=var,
+        palette="Set2",
+        linewidth=2.5,
+    )
+
+    if pos is not None:
+        title_str = f"{var} by Draft Status for {pos}"
+    else:
+        title_str = f"{var} by Draft Status"
+
+    ax.set(
+        title=title_str,
+        xlabel="Draft Status",
+        ylabel=var,
+    )
+    plt.show()
+
+    return data_frame
+
+
+def scatterplot(
+    var_one: str, var_two: str, year: str, records: dict[str, Player], pos: str | None = None
+) -> pd.DataFrame:
+    """
+    Return scatter plot of `var_one` by `var_two` (of position) by draft status.
+
+    Time Complexity
+    ---------------
+    
+    Arguments
+    ---------
+    var_one -- a string denoting a physical trait or performance test
+        Acceptable Parameters:
+        1. Height
+        2. Weight
+        3. Forty
+        4. BenchReps
+        5. BroadJump
+        6. Vertical
+        7. Shuttle
+        8. Cone
+    var_two -- string denoting a physical trait or performance test
+        Acceptable Parameters:
+        1. Height
+        2. Weight
+        3. Forty
+        4. BenchReps
+        5. BroadJump
+        6. Vertical
+        7. Shuttle
+        8. Cone
+    year -- a string denoting the year
+    records -- a dictionary:
+        keys -- player IDs
+        values -- instances of Player class
+    pos -- an optional string denoting position group
+
+    Return
+    -------
+    pd.DataFrame
+        column names:
+            "Draft Status"
+                datatype: string/categorical
+            Name of variable passed to `var` argument
+                datatype: float64/numeric
+    """
+    traits: dict[str, str] = {"Height": "ht", "Weight": "wt"}
+    tests: list[str] = [
+        "Forty",
+        "Vertical",
+        "BenchReps",
+        "BroadJump",
+        "Cone",
+        "Shuttle",
+    ]
+    data_frame: pd.DataFrame = pd.DataFrame(columns=["Draft Status", var_one, var_two])
+    group = list(records.values())
+
+    if pos is not None:
+        players: list[Player] = [
+            player
+            for player in group
+            if player.year == year and player.pos == pos
+        ]
+    else:
+        players = [player for player in group if player.year == year]
+
+    for player in players:
+        if var_one not in tests:
+            val_one = getattr(player, traits[var_one])
+        else:
+            val_one = getattr(player, "get_score")(var_one)
+        if var_two not in tests:
+            val_two = getattr(player, traits[var_two])
+        else:
+            val_two = getattr(player, "get_score")(var_two)
+
+        if val_one != "DNP" and val_two != "DNP":
+            if player.was_drafted():
+                data_frame.loc[
+                    len(data_frame.index)
+                ] = ["Drafted", float(val_one), float(val_two)]  # type: ignore
+            else:
+                data_frame.loc[
+                    len(data_frame.index)
+                ] = ["Undrafted", float(val_one), float(val_two)]  # type: ignore
+
+    plt.figure(figsize=(10, 6), tight_layout=True)  # type: ignore
+    ax = sns.scatterplot(
+        data=data_frame,
+        x=var_one,
+        y=var_two,
+        hue="Draft Status",
+        palette="Set2",
+        s=60,
+    )
+
+    if pos is not None:
+        title_str = f"{pos} Draft Status"
+    else:
+        title_str = "Draft Status"
+
+    ax.set(
+        xlabel=var_one,
+        ylabel=var_two,
+    )
+    ax.legend(
+        title=title_str,
+        title_fontsize=12
+    )
+    plt.show()
+
+    return data_frame
