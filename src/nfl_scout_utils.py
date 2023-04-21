@@ -548,8 +548,3 @@ def parse_data(player_filename: str, test_filename: str) -> dict[str, Player]:
     connection.close()
     records = player_dict
     return records
-
-
-records = parse_data("CombinePlayer_data.txt", "CombineTest_data.txt")
-player = records["John Abraham_2000"]
-print(player.ht)
