@@ -212,6 +212,11 @@ class Player:
     get_tests(self)
         Return the player's performance test history.
 
+        Time Complexity
+        ---------------
+        O(N)
+        N -- the number of performance tests taken by the player
+
         Arguments
         ---------
         None
@@ -233,6 +238,63 @@ class Player:
         Return
         ------
         None
+
+    was_drafted(self)
+        Return the player's draft status.
+
+        Time Complexity
+        ---------------
+        O(1) total
+
+        Arguments
+        ---------
+        None
+
+        Return
+        ------
+        bool
+            the player's draft status:
+                True if player was drafted
+                False if otherwise
+
+    get_score(self, test_name: str)
+        Return player's score for one performance test.
+
+        Time Complexity
+        ---------------
+        O(N) total
+        N -- number of performance tests taken by player
+
+        Arguments
+        ---------
+        test_name -- a string denoting the name of a performance test
+
+        Return
+        -------
+        str
+            player's score for the performance test
+
+    get_percentile(self, test_name: str, year: str, group: str)
+        Return the player's percentile for a performance test.
+
+        Time Complexity
+        ---------------
+        O(N) total
+        N -- number of players in player's draft class
+
+        Arguments
+        ---------
+        test_name -- a string denoting the name of a performance test
+        year -- a string denoting the year
+        group -- a string denoting the level of analysis:
+            1. draft_class, or
+            2. pos_group
+
+        Return
+        -------
+        str
+            the player's percentile for a performance test relative to
+            an entire draft class or their position group from any year
     """
 
     def __init__(self, id: str) -> None:
@@ -398,6 +460,11 @@ class Player:
         """
         Return the player's performance test history.
 
+        Time Complexity
+        ---------------
+        O(N)
+        N -- the number of performance tests taken by the player
+
         Arguments
         ---------
         None
@@ -408,7 +475,7 @@ class Player:
             instances of the Test class, where each instance
             is a recorded performance test for the player
         """
-        return self.tests
+        return self.tests  # O(n)
 
     def add_test(self, test: Test) -> None:
         """
@@ -424,6 +491,129 @@ class Player:
         None
         """
         self.get_tests().append(test)
+
+    def was_drafted(self) -> bool:
+        """
+        Return the player's draft status.
+
+        Time Complexity
+        ---------------
+        O(1) total
+
+        Arguments
+        ---------
+        None
+
+        Return
+        -------
+        bool
+            the player's draft status:
+                True if player was drafted
+                False if otherwise
+        """
+        draft_status = self.team
+        if draft_status != "Undrafted":
+            return True
+        return False
+
+    def get_score(self, test_name: str) -> str:
+        """
+        Return player's score for one performance test.
+
+        Time Complexity
+        ---------------
+        O(N) total
+        N -- number of performance tests taken by player
+
+        Arguments
+        ---------
+        test_name -- a string denoting the name of a performance test
+
+        Return
+        -------
+        str
+            player's score for the performance test
+        """
+        score = ""
+        tests = self.get_tests()[:]  # O(n)
+        for test in tests:  # O(n)
+            if test.name == test_name:
+                score = test.value
+        return score
+
+    def get_percentile(
+        self, test_name: str, year: str, group: str
+    ) -> float | str:
+        """
+        Return the player's percentile for a performance test.
+
+        Time Complexity
+        ---------------
+        O(M+N+O) total
+        M -- number of performance tests taken by player
+        N -- number of players in player's draft class or position group
+        O -- number of players in player's draft class with
+            recorded score for peformance test
+
+        Assumptions
+        -----------
+        1. N will be greater than or equal to O
+
+        Arguments
+        ---------
+        test_name -- a string denoting the name of a performance test
+        year -- a string denoting the year
+        group -- a string denoting the level of analysis:
+            1. draft_class, or
+            2. pos_group
+
+        Return
+        -------
+        str
+            the player's percentile for a performance test relative to
+            an entire draft class or their position group from any year
+        """
+        score_str = self.get_score(test_name)  # O(m)
+        if score_str == "DNP":
+            return self.name + " did not take this performance test!"
+
+        score_float = float(score_str)
+        connection = sqlite3.connect("Combine_database.db")
+        cursor = connection.cursor()
+
+        if group != "draft_class":
+            result = cursor.execute(
+                """
+                SELECT Value FROM Tests WHERE Name=? AND Year=?
+                AND Pos=?
+                """,
+                (
+                    test_name,
+                    year,
+                    self.pos,
+                ),
+            )  # O(n)
+        else:
+            result = cursor.execute(
+                """
+                SELECT Value FROM Tests WHERE Name=? AND Year=?
+                """,
+                (
+                    test_name,
+                    year,
+                ),
+            )  # O(n)
+        values: list[str] = list(result.fetchall())  # O(n)
+        connection.close()
+        good_values: list[float] = [
+            float(value[0]) for value in values if value[0] != ""
+        ]  # O(o)
+        count = 0
+        for value in good_values:  # O(o)
+            if value >= score_float:
+                count += 1
+        percentile = round((count / len(good_values)) * 100, 2)
+        return percentile
 
 
 def parse_data(player_filename: str, test_filename: str) -> dict[str, Player]:
@@ -460,9 +650,9 @@ def parse_data(player_filename: str, test_filename: str) -> dict[str, Player]:
     """
     player_infile = open(player_filename, "r")
     player_vars = player_infile.readline()
-    player_var_list = player_vars.split("\t")
+    player_var_list = player_vars.split("\t")  # O(r)
     player_var_list[-1] = player_var_list[-1].strip()
-    players = player_infile.readlines()
+    players = player_infile.readlines()  # O(qr)
     player_infile.close()
 
     player_dict: dict[str, Player] = {}
@@ -477,11 +667,11 @@ def parse_data(player_filename: str, test_filename: str) -> dict[str, Player]:
         """
     )
 
-    for aline in players:
-        player = aline.split("\t")
+    for aline in players:  # O(q)
+        player = aline.split("\t")  # O(r)
         player[-1] = player[-1].strip()
 
-        temp: dict[str, str] = dict(zip(player_var_list, player))
+        temp: dict[str, str] = dict(zip(player_var_list, player))  # O(r)
         pfr_id = temp["Pfr_ID"]
         player_dict[pfr_id] = Player(pfr_id)
 
@@ -505,9 +695,9 @@ def parse_data(player_filename: str, test_filename: str) -> dict[str, Player]:
 
     test_infile = open(test_filename, "r")
     test_vars = test_infile.readline()
-    test_var_list = test_vars.split("\t")
+    test_var_list = test_vars.split("\t")  # O(t)
     test_var_list[-1] = test_var_list[-1].strip()
-    tests = test_infile.readlines()
+    tests = test_infile.readlines()  # O(st)
     test_infile.close()
 
     cursor.execute("DROP TABLE IF EXISTS Tests")
@@ -519,11 +709,11 @@ def parse_data(player_filename: str, test_filename: str) -> dict[str, Player]:
         """
     )
 
-    for aline in tests:
-        test = aline.split("\t")
+    for aline in tests:  # O(s)
+        test = aline.split("\t")  # O(t)
         test[-1] = test[-1].strip()
 
-        temp_t: dict[str, str] = dict(zip(test_var_list, test))
+        temp_t: dict[str, str] = dict(zip(test_var_list, test))  # O(t)
         test_id = temp_t["Pfr_ID"] + "_" + temp_t["Test"]
 
         cursor.execute(
