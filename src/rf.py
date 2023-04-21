@@ -45,15 +45,25 @@ def predict(newdata, classifier):
     return classifier.predict(newdata)
 
 
+def visualize(y_pred, y_test) -> None:
+    """Visualize output."""
+    conf_mtx = confusion_matrix(y_test, y_pred, normalize="all")
+    show = plt.imshow(conf_mtx)
+    bar = plt.colorbar(show)
+    plt.show()
+
+
 def main():
     """Do things."""
-    fpath = "./CombinePlayer_data.txt"
+    fpath = "~/Duke/821/final_proj/CombinePlayer_data.txt"
     df = read_data(fpath)
 
     input = get_feature_label(df, [3, 4, 7, 8], 1)
-    classifier = fit(input[0], input[1], 10)
-    new_data = input[0]
-    output = predict(new_data, classifier)
+    splited_data = train_test_split(input[0], input[1], test_size=0.25, random_state=7)
+
+    classifier = fit(splited_data[0], splited_data[2], 10)
+    y_pred = predict(splited_data[1], classifier)
+    visualize(y_pred, splited_data[3])
 
 
 if __name__ == "__main__":
