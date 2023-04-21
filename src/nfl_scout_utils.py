@@ -17,6 +17,9 @@ sqlite3
 matplotlib
 seaborn
 pandas
+numpy
+sklearn
+scipy
 
 Classes
 -------
@@ -63,12 +66,27 @@ scatterplot(
     pos: str | None = None
 ) -> pd.DataFrame:
     Return scatter plot of `var_one` by `var_two` (of position) by draft status.
+
+kmeans(
+    var_one: str,
+    var_two: str,
+    year: str,
+    records: dict[str, Player],
+    k: int,
+    pos: str | None = None
+) -> pd.DataFrame:
+    Return KMeans plot of `var_one` by `var_two` (of position).
 """
 
 from datetime import *  # type: ignore
+from sklearn.cluster import KMeans
+from scipy.spatial import ConvexHull
+from scipy import interpolate
+from matplotlib.lines import Line2D  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 import seaborn as sns  # type: ignore
 import pandas as pd  # type: ignore
+import numpy as np
 import sqlite3
 
 
@@ -1177,4 +1195,204 @@ def scatterplot(
     )
     plt.show()
 
+    return data_frame
+
+
+def kmeans(
+    var_one: str,
+    var_two: str,
+    year: str,
+    records: dict[str, Player],
+    k: int,
+    pos: str | None = None 
+) -> pd.DataFrame:
+    """
+    Return KMeans plot of `var_one` by `var_two` (of position).
+
+    Time Complexity
+    ---------------
+    
+    Arguments
+    ---------
+    var_one -- a string denoting a physical trait or performance test
+        Acceptable Parameters:
+        1. Height
+        2. Weight
+        3. Forty
+        4. BenchReps
+        5. BroadJump
+        6. Vertical
+        7. Shuttle
+        8. Cone
+    var_two -- string denoting a physical trait or performance test
+        Acceptable Parameters:
+        1. Height
+        2. Weight
+        3. Forty
+        4. BenchReps
+        5. BroadJump
+        6. Vertical
+        7. Shuttle
+        8. Cone
+    year -- a string denoting the year
+    records -- a dictionary:
+        keys -- player IDs
+        values -- instances of Player class
+    k -- an integer denoting the number of clusters to be created
+    pos -- an optional string denoting position group
+
+    Return
+    -------
+    pd.DataFrame
+        column names:
+            "Draft Status"
+                datatype: string/categorical
+            Name of variable passed to `var` argument
+                datatype: float64/numeric
+    """
+    traits: dict[str, str] = {"Height": "ht", "Weight": "wt"}
+    tests: list[str] = [
+        "Forty",
+        "Vertical",
+        "BenchReps",
+        "BroadJump",
+        "Cone",
+        "Shuttle",
+    ]
+    data_frame: pd.DataFrame = pd.DataFrame(columns=["Draft Status", "Pos", var_one, var_two])
+    group = list(records.values())
+    if pos is not None:
+        players: list[Player] = [
+            player
+            for player in group
+            if player.year == year and player.pos == pos
+        ]
+    else:
+        players = [player for player in group if player.year == year]
+
+    for player in players:
+        if var_one not in tests:
+            val_one = getattr(player, traits[var_one])
+        else:
+            val_one = getattr(player, "get_score")(var_one)
+        if var_two not in tests:
+            val_two = getattr(player, traits[var_two])
+        else:
+            val_two = getattr(player, "get_score")(var_two)
+
+        if val_one != "DNP" and val_two != "DNP":
+            if player.was_drafted():
+                data_frame.loc[
+                    len(data_frame.index)
+                ] = ["Drafted", player.pos, float(val_one), float(val_two)]  # type: ignore
+            else:
+                data_frame.loc[
+                    len(data_frame.index)
+                ] = ["Undrafted", player.pos, float(val_one), float(val_two)]  # type: ignore
+    
+    num_clusters = list(range(k))
+    kmeans = KMeans(n_clusters=len(num_clusters), random_state=0)
+    data_frame["Cluster"] = kmeans.fit_predict(
+        data_frame[[var_one, var_two]]
+    )
+
+    centroids = kmeans.cluster_centers_
+    centroid_x = [c[0] for c in centroids]
+    centroid_y = [c[1] for c in centroids]
+
+    data_frame["Centroid_X"] = data_frame.Cluster.map(
+        dict(zip(num_clusters, centroid_x))
+    )
+    data_frame["Centroid_Y"] = data_frame.Cluster.map(
+        dict(zip(num_clusters, centroid_y))
+    )
+    colors = sns.color_palette("pastel") # + sns.color_palette("Set2")
+    colors = colors[:len(num_clusters)]
+
+    data_frame["Color"] = data_frame.Cluster.map(
+        dict(zip(num_clusters, colors))
+    )
+
+    fig,ax = plt.subplots(1, figsize=(8,8))
+    plt.scatter(
+        data_frame[var_one],
+        data_frame[var_two],
+        c = data_frame.Color,
+        alpha = 0.6,
+        s=10
+        )
+    plt.scatter(
+        centroid_x,
+        centroid_y,
+        marker="^",  # type: ignore
+        c=colors,
+        s=70
+    )
+
+    for cluster in data_frame.Cluster.unique():
+        points = data_frame[data_frame.Cluster == cluster][
+            [var_one, var_two]
+        ].values
+        hull = ConvexHull(points)
+        x_hull = np.append(
+            points[hull.vertices, 0],
+            points[hull.vertices,0][0]
+        )
+        y_hull = np.append(
+            points[hull.vertices,1],
+            points[hull.vertices,1][0]
+        )
+        dist = np.sqrt(
+            (x_hull[:-1] - x_hull[1:])**2
+            + (y_hull[:-1] - y_hull[1:])**2
+        )
+        dist_along = np.concatenate(([0], dist.cumsum()))
+        spline,u = interpolate.splprep(
+            [x_hull, y_hull],
+            u=dist_along,
+            s=0,
+            per=1
+        )
+        interp_d = np.linspace(
+            dist_along[0],
+            dist_along[-1],
+            50
+        )
+        interp_x, interp_y = interpolate.splev(
+            interp_d, spline
+        )
+        plt.fill(
+            interp_x,
+            interp_y,
+            "--",
+            c=colors[cluster],
+            alpha=0.2
+        )
+
+    legend_elements=[
+        Line2D(
+        [0],
+        [0],
+        marker="o",
+        color="w",
+        label="Cluster {}".format(i+1),
+        markerfacecolor=mcolor,
+        markersize=10
+        ) for i, mcolor in enumerate(colors)
+        ]
+    plt.legend(
+        handles=legend_elements,
+        loc="upper left",
+        ncol = 1
+    )
+
+    if pos is not None:
+        title_str = f"KMeans: {var_one} by {var_two} for {pos} in {year} Draft Class"
+    else:
+        title_str = f"KMeans: {var_one} by {var_two} for {year} Draft Class"
+
+    plt.title(title_str)
+    plt.xlabel(var_one)
+    plt.ylabel(var_two)
+    plt.show()
     return data_frame
