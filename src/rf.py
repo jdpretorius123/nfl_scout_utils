@@ -94,7 +94,12 @@ def get_feature_label(
     return (X, y)
 
 
-def fit(X_train, y_train, n_trees, loss_fn="entropy") -> Any:
+def fit(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    n_trees: int,
+    loss_fn: str = "entropy",
+) -> Any:
     """
     Fit the model.
 
@@ -118,7 +123,7 @@ def fit(X_train, y_train, n_trees, loss_fn="entropy") -> Any:
     return classifier
 
 
-def predict(newdata, classifier) -> int:
+def predict(newdata: np.ndarray, classifier: Any) -> int:
     """
     Predict a new person.
 
@@ -134,7 +139,7 @@ def predict(newdata, classifier) -> int:
     return classifier.predict(newdata)
 
 
-def visualize(y_pred, y_test) -> None:
+def visualize(y_pred: list[int], y_test: list[int]) -> None:
     """
     Visualize output.
 
