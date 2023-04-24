@@ -33,7 +33,7 @@ rf.fit(
 rf.visualize(
     y_pred: list[int],
     y_true: list[int],
-    style = "confusion": str
+    style: str = "confusion"
 ) -> None:
     Visualizes classification performance
 """
