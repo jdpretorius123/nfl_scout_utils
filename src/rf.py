@@ -18,7 +18,7 @@ rf.get_feature_label(
     parsed_data: pd.DataFrame,
     feature_cols: list[str],
     label_col: str
-) -> tuple(pd.DataFrame, pd.DataFrame)
+) -> tuple[pd.DataFrame, pd.DataFrame]
     Returns tuple of feature matrix and label vector
 
 rf.fit(
