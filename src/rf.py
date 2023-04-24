@@ -4,7 +4,7 @@ Basic machine learning on multiclass prediction.
 The module provides functionalities to predict a player's
 position in a team given specified informations about this
 player. This module allows users to read, specify features
-of interest, and make predictions on any new data. This 
+of interest, and make predictions on any new data. This
 module is compatible with both .txt files and .csv files.
 
 Dependencies
@@ -52,6 +52,8 @@ def read_data(fpath: str) -> pd.DataFrame:
     """
     Reads in the data.
 
+    This function accepts .cvs files or "\t" delimited txt files
+    as input.
     Arguments
     ---------
     fpath: str of data directory.
@@ -156,26 +158,3 @@ def visualize(y_pred: list[int], y_test: list[int]) -> None:
     show = plt.imshow(conf_mtx)
     bar = plt.colorbar(show)
     plt.show()
-
-
-def main():
-    """Do things."""
-    fpath = "~/Duke/821/final_proj/CombinePlayer_data.txt"
-    df = read_data(fpath)
-    input = get_feature_label(df, [3, 4, 7, 8], 2)
-    splited_data = train_test_split(input[0], input[1], test_size=0.25, random_state=7)
-
-    # model fit
-    classifier = fit(splited_data[0], splited_data[2], 10)
-
-    # test new data (one sample)
-    new_data = np.array([[70, 200, 1, 13]])
-    pred = predict(new_data, classifier)
-
-    # visualize performance
-    y_pred = predict(splited_data[1], classifier)
-    visualize(y_pred, y_test=splited_data[3])
-
-
-if __name__ == "__main__":
-    main()
