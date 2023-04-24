@@ -25,8 +25,8 @@ rf.fit(
     X: pd.DataFrame,
     y: pd.DataFrame,
     n_trees: int,
-    loss_fun: "MSE",
-    random_seed = None:
+    loss_fun: str = "entropy",
+    random_seed: None = None:
 ) -> RandomForestClassifier
     Trains model
 
@@ -163,9 +163,7 @@ def main():
     fpath = "~/Duke/821/final_proj/CombinePlayer_data.txt"
     df = read_data(fpath)
     input = get_feature_label(df, [3, 4, 7, 8], 2)
-    splited_data = train_test_split(
-        input[0], input[1], test_size=0.25, random_state=7
-    )
+    splited_data = train_test_split(input[0], input[1], test_size=0.25, random_state=7)
 
     # model fit
     classifier = fit(splited_data[0], splited_data[2], 10)
@@ -173,10 +171,6 @@ def main():
     # test new data (one sample)
     new_data = np.array([[70, 200, 1, 13]])
     pred = predict(new_data, classifier)
-    print(
-        f"A new player with Ht = {new_data[0][0]}, Wt = {new_data[0][1]}, Round = {new_data[0][2]} and Pick = {new_data[0][3]} is predicted to be in position {pred}"
-    )
-    print(df.head())
 
     # visualize performance
     y_pred = predict(splited_data[1], classifier)

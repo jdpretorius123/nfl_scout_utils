@@ -13,7 +13,7 @@ player_file = "CombinePlayer_data.txt"
 players = open(player_file, mode="w", newline="\n")
 players.write(PLAYER_FILE)
 players.close()
-df = pd.read_csv(player_file)
+df = pd.read_csv(player_file, sep="\t")
 
 
 def test_get_features() -> None:
