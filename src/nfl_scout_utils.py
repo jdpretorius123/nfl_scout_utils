@@ -6,9 +6,8 @@ NFL scouts! These hardworking folks travel incessantly, are
 underpaid, and hardly receive credit when processes go well.
 This module allows the scout to store, summarize, and
 analyze NFL combine data to speed up their processes and
-earn them that well-deserved raise! This tool has components
-that are compatible with tab-delimited text (.txt) files and
-comma-separated-value (.csv) files.
+earn them that well-deserved raise! This tool is compatible 
+with tab-delimited text (.txt) files.
 
 Dependencies
 ------------
