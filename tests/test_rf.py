@@ -26,3 +26,19 @@ def test_get_features2() -> None:
     """Test output shape."""
     output = rf.get_feature_label(df, [3, 4, 7, 8], 2)
     assert output[0].shape[0] == output[1].shape[0], "shape not correct."
+
+
+def test_model() -> None:
+    """Test fitted model."""
+    output = rf.get_feature_label(df, [3, 4, 7, 8], 2)
+    model = rf.fit(output[0], output[1])
+    assert model.n_estimators == 10, "Fitting not correct."
+
+
+def test_predict() -> None:
+    """Test predict function."""
+    output = rf.get_feature_label(df, [3, 4, 7, 8], 2)
+    model = rf.fit(output[0], output[1])
+    pred = rf.predict([[79, 230, 1, 13]], model)
+    assert type(pred) == int, "output type not correct."
+    assert pred in df["Pos"], "Output value not correct."
